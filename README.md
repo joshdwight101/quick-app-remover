@@ -19,10 +19,12 @@ Removal By Application Name
 Persistent Multi-Search: The unique "Search & Select" workflow allows you to filter for one keyword (e.g., "Java"), check the boxes, filter for another (e.g., "Adobe"), and keep all previous selections active.
 ![screenshot](images/filter-and-select.png)
 
-Removal by Publisher
+Removal by Publisher (Auto Populated)
+Quick App Remover has the ability to list your applications by Publisher for quick and easy removal
 ![screenshot](images/removal-by-publisher.png)
 
 Removal by Vendor Search (Utilizes Wildcards automatically)
+Vendor searching allows you to search by vendor name and remove multiple apps quickly without you needing to worry about utilizing wildcards at all because they are utilized automatically for you. Just search the vendor name and uninstall results at the click of a button.
 ![screenshot](images/vendor-wildcard-search.png)
 
 Sequential Silent Uninstallation: Automatically injects silent/quiet flags into uninstallation strings to ensure a hands-off experience.
