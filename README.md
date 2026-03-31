@@ -14,12 +14,12 @@ Unlike traditional scripts that rely on WMIC or Win32_Product (which can trigger
 
 Lightning-Fast Discovery: Uses inline C# to bypass WMI, scanning thousands of registry keys in milliseconds.
 
-Removal By Application Name
+Removal By Application Name.
 
 Persistent Multi-Search: The unique "Search & Select" workflow allows you to filter for one keyword (e.g., "Java"), check the boxes, filter for another (e.g., "Adobe"), and keep all previous selections active.
 ![screenshot](images/filter-and-select.png)
 
-Removal by Publisher (Auto Populated)
+Removal by Publisher (Auto Populated).
 Quick App Remover has the ability to list your applications by Publisher for quick and easy removal
 ![screenshot](images/removal-by-publisher.png)
 
