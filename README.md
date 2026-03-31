@@ -23,7 +23,7 @@ Removal by Publisher
 [screenshot](images/removal-by-publisher.png)
 
 Removal by Vendor Search (Utilizes Wildcards automatically)
-[screenshot](images/vendor-wildcard-search)
+[screenshot](images/vendor-wildcard-search.png)
 
 Sequential Silent Uninstallation: Automatically injects silent/quiet flags into uninstallation strings to ensure a hands-off experience.
 
