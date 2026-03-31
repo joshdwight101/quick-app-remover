@@ -1,10 +1,11 @@
 ﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Quick App Remover v1.5.1
+    Quick App Remover v1.6.1
 .DESCRIPTION
     A high-speed uninstallation tool using C# registry discovery and WPF.
-    Added: Official slogan "The multiple searching app removal tool." to UI and Guide.
+    Fixed: PowerShell parser error in progress label string.
+    Fixed: UI responsiveness and progress tracking logic.
     Credits: Created by Joshua Dwight.
 #>
 
@@ -85,13 +86,13 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Quick App Remover v1.5.1 by Joshua Dwight" Height="850" Width="1100" WindowStartupLocation="CenterScreen" Background="#F9FAFB">
+        Title="Quick App Remover v1.6.1 by Joshua Dwight" Height="900" Width="1100" WindowStartupLocation="CenterScreen" Background="#F9FAFB">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Menu Bar -->
             <RowDefinition Height="Auto"/> <!-- Header Section -->
             <RowDefinition Height="*"/>    <!-- Main Tabs -->
-            <RowDefinition Height="130"/>  <!-- Log Area -->
+            <RowDefinition Height="180"/>  <!-- Log & Progress Area -->
         </Grid.RowDefinitions>
 
         <Menu Grid.Row="0" Background="#F3F4F6" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1">
@@ -112,7 +113,6 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
         </StackPanel>
 
         <TabControl Name="mainTabs" Grid.Row="2" Background="White" BorderBrush="#E5E7EB" BorderThickness="1" Margin="20,0,20,0">
-            
             <TabItem Header="All Apps" FontSize="13" Padding="15,8">
                 <Grid Margin="20">
                     <Grid.RowDefinitions>
@@ -121,9 +121,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-
                     <TextBlock Text="Filter &amp; Select Applications" Grid.Row="0" FontWeight="SemiBold" FontSize="18" Foreground="#111827" Margin="0,0,0,10"/>
-
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,15">
                         <StackPanel Margin="0,0,20,0">
                             <TextBlock Text="Filter by Name:" FontSize="12" Foreground="#6B7280" Margin="0,0,0,4"/>
@@ -137,23 +135,17 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
                              <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
                         </Button>
                     </StackPanel>
-
-                    <DataGrid Name="dgAllApps" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" Margin="0,0,0,15" 
-                              SelectionMode="Extended" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#F3F4F6" RowBackground="White" AlternatingRowBackground="#F9FAFB">
+                    <DataGrid Name="dgAllApps" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" Margin="0,0,0,15" SelectionMode="Extended" GridLinesVisibility="Horizontal" RowBackground="White" AlternatingRowBackground="#F9FAFB">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Select" Width="60">
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
-                                    </DataTemplate>
+                                    <DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/></DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Application Name" Binding="{Binding DisplayName}" Width="*" IsReadOnly="True"/>
                             <DataGridTextColumn Header="Publisher" Binding="{Binding Publisher}" Width="350" IsReadOnly="True"/>
                         </DataGrid.Columns>
                     </DataGrid>
-
                     <Button Name="btnUninstallSelected" Grid.Row="3" Content="Uninstall Selected Apps" Background="#EF4444" Foreground="White" FontWeight="Bold" FontSize="15" Height="50" Cursor="Hand" BorderThickness="0">
                         <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                     </Button>
@@ -162,13 +154,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 
             <TabItem Header="By Publisher" FontSize="13" Padding="15,8">
                 <Grid Margin="20">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <DockPanel LastChildFill="True" Margin="0,0,0,20">
                         <TextBlock Text="Select Publisher:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14" Margin="0,0,15,0"/>
                         <Button Name="btnRefreshAll" DockPanel.Dock="Right" Content="↻ Refresh List" Width="120" Margin="15,0,0,0" Padding="5" Background="#10B981" Foreground="White" FontWeight="Bold" Cursor="Hand" BorderThickness="0">
@@ -176,12 +162,8 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
                         </Button>
                         <ComboBox Name="cmbPublishers" IsEditable="True" VerticalContentAlignment="Center"/>
                     </DockPanel>
-
                     <DataGrid Name="dgPublisherApps" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" Margin="0,0,0,15" GridLinesVisibility="Horizontal">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="*"/>
-                            <DataGridTextColumn Header="Publisher" Binding="{Binding Publisher}" Width="350"/>
-                        </DataGrid.Columns>
+                        <DataGrid.Columns><DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="*"/><DataGridTextColumn Header="Publisher" Binding="{Binding Publisher}" Width="350"/></DataGrid.Columns>
                     </DataGrid>
                     <Button Name="btnUninstallPublisher" Grid.Row="2" Content="Uninstall All From Publisher" Background="#EF4444" Foreground="White" Height="50" FontWeight="Bold" Cursor="Hand" BorderThickness="0">
                          <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
@@ -204,7 +186,18 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
             </TabItem>
         </TabControl>
 
-        <TextBox Name="txtLog" Grid.Row="3" Margin="20,15,20,15" IsReadOnly="True" Background="#111827" Foreground="#10B981" FontFamily="Consolas" FontSize="13" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" Padding="10" Focusable="False"/>
+        <Grid Grid.Row="3" Margin="20,10,20,15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <ProgressBar Name="pbStatus" Grid.Row="0" Height="15" Background="#E5E7EB" Foreground="#3B82F6" BorderThickness="0" Margin="0,0,0,5">
+                <ProgressBar.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="2"/></Style></ProgressBar.Resources>
+            </ProgressBar>
+            <TextBlock Name="lblProgress" Grid.Row="1" Text="Ready" FontSize="11" Foreground="#4B5563" Margin="0,0,0,5"/>
+            <TextBox Name="txtLog" Grid.Row="2" IsReadOnly="True" Background="#111827" Foreground="#10B981" FontFamily="Consolas" FontSize="13" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" Padding="10" Focusable="False"/>
+        </Grid>
     </Grid>
 </Window>
 "@
@@ -219,6 +212,8 @@ $menuExit = $window.FindName("menuExit")
 $menuGuide = $window.FindName("menuGuide")
 $menuChangelog = $window.FindName("menuChangelog")
 $menuAbout = $window.FindName("menuAbout")
+$pbStatus = $window.FindName("pbStatus")
+$lblProgress = $window.FindName("lblProgress")
 $dgAllApps = $window.FindName("dgAllApps")
 $btnRefreshAll = $window.FindName("btnRefreshAll")
 $txtFilterAllName = $window.FindName("txtFilterAllName")
@@ -264,105 +259,73 @@ This tool helps you quickly clean up your computer by removing many apps at once
 
 2. OTHER TABS
    - BY PUBLISHER: Pick a company (like Microsoft) and see all their apps.
-   - BY APP NAME/VENDOR: Use these if you want to find things using special 'wildcards' (automatic search).
+   - BY APP NAME/VENDOR: Use these if you want to find things using special 'wildcards'.
 
-3. HOW TO UNINSTALL
-   - Once you have checked everything you want to remove, click the big red button at the bottom.
-   - The tool will go through the list one by one and remove them quietly without bothering you.
+3. PROGRESS TRACKING
+   - When uninstalling multiple apps, a blue progress bar at the bottom will show you exactly how far along the process is.
+   - The status label will tell you which app is currently being removed.
 
-4. KEYBOARD SHORTCUTS (For Faster Work)
+4. KEYBOARD SHORTCUTS
    - Control + 1: Go to All Apps
    - Control + 2: Go to Publisher List
    - Control + 3: Search by Name
    - Control + 4: Search by Vendor
    - Enter: Press this after typing a search to find apps instantly.
 "@
-
-    $guideXaml = @"
-<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Title='User Guide' Height='600' Width='700' WindowStartupLocation='CenterOwner'>
-    <Grid Margin='15'>
-        <TextBox Name='txtGuide' IsReadOnly='True' TextWrapping='Wrap' VerticalScrollBarVisibility='Auto' FontFamily='Segoe UI' FontSize='14' Padding='15' BorderBrush='#D1D5DB'/>
-    </Grid>
-</Window>
-"@
-    $gWin = [System.Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader ([xml]$guideXaml)))
+    $gWin = [System.Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader ([xml]"<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Title='User Guide' Height='600' Width='700' WindowStartupLocation='CenterOwner'><Grid Margin='15'><TextBox Name='txtGuide' IsReadOnly='True' TextWrapping='Wrap' VerticalScrollBarVisibility='Auto' FontFamily='Segoe UI' FontSize='14' Padding='15' BorderBrush='#D1D5DB'/></Grid></Window>")))
     $gWin.FindName("txtGuide").Text = $guideContent
-    $gWin.Owner = $window
-    [void]$gWin.ShowDialog()
+    $gWin.Owner = $window; [void]$gWin.ShowDialog()
 }
 
 Function Show-About {
-    $aboutXaml = @"
-<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Title='About' Height='250' Width='400' WindowStartupLocation='CenterOwner' ResizeMode='NoResize'>
-    <StackPanel Margin='20' HorizontalAlignment='Center' VerticalAlignment='Center'>
-        <TextBlock Text='Quick App Remover' FontSize='20' FontWeight='Bold' Margin='0,0,0,5' HorizontalAlignment='Center'/>
-        <TextBlock Text='The multiple searching app removal tool.' FontSize='12' FontStyle='Italic' Foreground='#6B7280' Margin='0,0,0,10' HorizontalAlignment='Center'/>
-        <TextBlock Text='v1.5.1' Margin='0,0,0,15' HorizontalAlignment='Center' Foreground='#6B7280'/>
-        <TextBlock Text='Created by Joshua Dwight' FontSize='16' Margin='0,0,0,10' HorizontalAlignment='Center'/>
-        <TextBlock Name='lnkGithub' Text='https://github.com/joshdwight101' Foreground='Blue' Cursor='Hand' TextDecorations='Underline' HorizontalAlignment='Center'/>
-    </StackPanel>
-</Window>
-"@
-    $aWin = [System.Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader ([xml]$aboutXaml)))
-    $aWin.FindName("lnkGithub").Add_MouseDown({
-        Start-Process "https://github.com/joshdwight101"
-    })
-    $aWin.Owner = $window
-    [void]$aWin.ShowDialog()
+    $aWin = [System.Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader ([xml]"<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Title='About' Height='250' Width='400' WindowStartupLocation='CenterOwner' ResizeMode='NoResize'><StackPanel Margin='20' HorizontalAlignment='Center' VerticalAlignment='Center'><TextBlock Text='Quick App Remover' FontSize='20' FontWeight='Bold' Margin='0,0,0,5' HorizontalAlignment='Center'/><TextBlock Text='The multiple searching app removal tool.' FontSize='12' FontStyle='Italic' Foreground='#6B7280' Margin='0,0,0,10' HorizontalAlignment='Center'/><TextBlock Text='v1.6.1' Margin='0,0,0,15' HorizontalAlignment='Center' Foreground='#6B7280'/><TextBlock Text='Created by Joshua Dwight' FontSize='16' Margin='0,0,0,10' HorizontalAlignment='Center'/><TextBlock Name='lnkGithub' Text='https://github.com/joshdwight101' Foreground='Blue' Cursor='Hand' TextDecorations='Underline' HorizontalAlignment='Center'/></StackPanel></Window>")))
+    $aWin.FindName("lnkGithub").Add_MouseDown({ Start-Process "https://github.com/joshdwight101" })
+    $aWin.Owner = $window; [void]$aWin.ShowDialog()
 }
 
 Function Show-Changelog {
     $clContent = @"
 Quick App Remover - Historical Changelog
 
-v1.5.1 (Current)
+v1.6.1 (Current)
+- Fixed PowerShell parser error in uninstallation status string.
+- Final code stabilization for progress tracking logic.
+
+v1.6.0
+- Added dynamic Progress Bar to track uninstallation status.
+- Added real-time progress label (e.g., "Processing 2 of 5").
+- Enhanced UI layout to prevent window freezing during background tasks.
+
+v1.5.1
 - Added official slogan: "The multiple searching app removal tool."
 - Integrated slogan into Header, About window, and User Guide.
 
 v1.5.0
-- Added 'User Guide' to the help menu for beginners and power users.
-- Added 'About' window with clickable GitHub link.
-- Final UI polish for help windows.
+- Added 'User Guide' and 'About' window with clickable GitHub link.
 
-v1.4.8
-- Fixed Changelog XAML parsing error caused by nested quote characters.
-- Expanded full historical changelog data.
-
-v1.4.7
-- Implemented NoteProperty injection for selection logic. This fixes the 'Property not found' binder error.
+v1.4.7 - v1.4.8
+- Fixed 'IsSelected' property binder error using NoteProperty injection.
+- Fixed Changelog XML parsing errors.
 
 v1.4.1 - v1.4.6
-- Added global Menu Bar with File (Exit) and Help (Changelog) menus.
-- Sequential uninstallation logic.
-- Ctrl+A selection support for bulk checkbox toggling.
-- Registry discovery optimizations.
+- Sequential uninstallation logic and Ctrl+A selection support.
+- Added global Menu Bar.
 
-v1.3.0 - v1.3.2
-- Added real-time 'Filter-as-you-type' for All Apps.
-- Selection persistence across filters.
+v1.3.x
+- Real-time 'Filter-as-you-type' and selection persistence.
 
 v1.2.0
-- Renamed application to 'Quick App Remover'.
-- Introduced 'All Apps' tab.
+- Renamed application and added 'All Apps' picker tab.
 
 v1.1.0
-- Added branding, ToolTips, and Shortcuts (Ctrl+1-4).
+- Added ToolTips and Keyboard shortcuts.
 
 v1.0.0
-- Initial Build. C# Registry discovery.
+- Initial Build with C# Registry discovery engine.
 "@
-
-    $clXaml = @"
-<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Title='Historical Changelog' Height='600' Width='700' WindowStartupLocation='CenterOwner'>
-    <Grid Margin='15'>
-        <TextBox Name='txtCL' IsReadOnly='True' TextWrapping='Wrap' VerticalScrollBarVisibility='Auto' FontFamily='Consolas' FontSize='12' Padding='10' BorderBrush='#D1D5DB'/>
-    </Grid>
-</Window>
-"@
-    $clWin = [System.Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader ([xml]$clXaml)))
+    $clWin = [System.Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader ([xml]"<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Title='Historical Changelog' Height='600' Width='700' WindowStartupLocation='CenterOwner'><Grid Margin='15'><TextBox Name='txtCL' IsReadOnly='True' TextWrapping='Wrap' VerticalScrollBarVisibility='Auto' FontFamily='Consolas' FontSize='12' Padding='10' BorderBrush='#D1D5DB'/></Grid></Window>")))
     $clWin.FindName("txtCL").Text = $clContent 
-    $clWin.Owner = $window
-    [void]$clWin.ShowDialog()
+    $clWin.Owner = $window; [void]$clWin.ShowDialog()
 }
 
 Function Apply-AllAppsFilter {
@@ -381,6 +344,8 @@ Function Refresh-AppList {
     ($global:allAppsRaw | Select-Object -ExpandProperty Publisher | Where-Object { $_ -and $_ -ne 'Unknown' } | Sort-Object -Unique) | ForEach-Object { [void]$cmbPublishers.Items.Add($_) }
     Update-Log "System scan complete. Found $($global:allAppsRaw.Count) applications."
     $btnRefreshAll.IsEnabled = $true
+    $pbStatus.Value = 0
+    $lblProgress.Text = "Ready"
 }
 
 Function Execute-Uninstall {
@@ -388,19 +353,34 @@ Function Execute-Uninstall {
     if (!$apps -or $apps.Count -eq 0) { [System.Windows.MessageBox]::Show("No apps selected."); return }
     if ([System.Windows.MessageBox]::Show("Uninstall $($apps.Count) items sequentially?", "Confirm", "YesNo", "Warning") -ne "Yes") { return }
 
+    $total = $apps.Count
+    $current = 0
+    $pbStatus.Maximum = $total
+    $pbStatus.Value = 0
+
     foreach ($app in $apps) {
-        Update-Log "Removing: $($app.DisplayName)..."
+        $current++
+        # Fixed parser error by wrapping the variable reference correctly
+        $appName = $app.DisplayName
+        $lblProgress.Text = "Processing ${current} of ${total}: ${appName}"
+        Update-Log "Removing (${current}/${total}): ${appName}..."
+        
         $cmd = if ($app.QuietUninstallString) { $app.QuietUninstallString } else { $app.UninstallString }
         if ($cmd -match "msiexec") {
             $cmd = $cmd -replace "/[iI]", "/x"
             if ($cmd -notmatch "/qn") { $cmd += " /qn /norestart REBOOT=ReallySuppress" }
         } elseif ($cmd -match "unins.*\.exe") { $cmd += " /VERYSILENT /SUPPRESSMSGBOXES /NORESTART" }
+        
         try {
             Update-Log " > Command: $cmd"
             $p = Start-Process "cmd.exe" -ArgumentList "/c `"$cmd`"" -WindowStyle Hidden -Wait -PassThru
-            Update-Log " > Result: Code $($p.ExitCode)"
+            Update-Log " > Done. Code $($p.ExitCode)"
         } catch { Update-Log " > Error: $($_.Exception.Message)" }
+        
+        $pbStatus.Value = $current
     }
+    
+    $lblProgress.Text = "Completed uninstallation of ${total} items."
     Refresh-AppList
 }
 
