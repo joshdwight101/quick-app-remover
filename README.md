@@ -2,6 +2,8 @@ Quick App Remover 🚀
 
 "The multiple searching app removal tool."
 
+![Screenshot](images/Screenshot 2026-03-31 143056.png)
+
 Quick App Remover is a high-performance, PowerShell-based utility designed for system administrators and power users who need to perform bulk software uninstallation without the sluggishness and risks associated with standard Windows tools.
 
 Unlike traditional scripts that rely on WMIC or Win32_Product (which can trigger slow consistency checks and forced reboots), Quick App Remover utilizes an embedded C# discovery engine to scan the Windows Registry directly. This results in near-instantaneous application indexing.
