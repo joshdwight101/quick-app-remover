@@ -17,13 +17,13 @@ Lightning-Fast Discovery: Uses inline C# to bypass WMI, scanning thousands of re
 Removal By Application Name
 
 Persistent Multi-Search: The unique "Search & Select" workflow allows you to filter for one keyword (e.g., "Java"), check the boxes, filter for another (e.g., "Adobe"), and keep all previous selections active.
-[screenshot](images/filter-and-select.png)
+![screenshot](images/filter-and-select.png)
 
 Removal by Publisher
-[screenshot](images/removal-by-publisher.png)
+![screenshot](images/removal-by-publisher.png)
 
 Removal by Vendor Search (Utilizes Wildcards automatically)
-[screenshot](images/vendor-wildcard-search.png)
+![screenshot](images/vendor-wildcard-search.png)
 
 Sequential Silent Uninstallation: Automatically injects silent/quiet flags into uninstallation strings to ensure a hands-off experience.
 
