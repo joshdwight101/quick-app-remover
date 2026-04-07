@@ -1,10 +1,10 @@
 ﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    Quick App Remover v1.6.1
+    Quick App Remover v1.6.2
 .DESCRIPTION
     A high-speed uninstallation tool using C# registry discovery and WPF.
-    Fixed: PowerShell parser error in progress label string.
+    Fixed: Popups now persistently stay in the foreground by setting the main window as owner.
     Fixed: UI responsiveness and progress tracking logic.
     Credits: Created by Joshua Dwight.
 #>
@@ -86,7 +86,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Quick App Remover v1.6.1 by Joshua Dwight" Height="900" Width="1100" WindowStartupLocation="CenterScreen" Background="#F9FAFB">
+        Title="Quick App Remover v1.6.2 by Joshua Dwight" Height="900" Width="1100" WindowStartupLocation="CenterScreen" Background="#F9FAFB">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Menu Bar -->
@@ -278,7 +278,7 @@ This tool helps you quickly clean up your computer by removing many apps at once
 }
 
 Function Show-About {
-    $aWin = [System.Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader ([xml]"<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Title='About' Height='250' Width='400' WindowStartupLocation='CenterOwner' ResizeMode='NoResize'><StackPanel Margin='20' HorizontalAlignment='Center' VerticalAlignment='Center'><TextBlock Text='Quick App Remover' FontSize='20' FontWeight='Bold' Margin='0,0,0,5' HorizontalAlignment='Center'/><TextBlock Text='The multiple searching app removal tool.' FontSize='12' FontStyle='Italic' Foreground='#6B7280' Margin='0,0,0,10' HorizontalAlignment='Center'/><TextBlock Text='v1.6.1' Margin='0,0,0,15' HorizontalAlignment='Center' Foreground='#6B7280'/><TextBlock Text='Created by Joshua Dwight' FontSize='16' Margin='0,0,0,10' HorizontalAlignment='Center'/><TextBlock Name='lnkGithub' Text='https://github.com/joshdwight101' Foreground='Blue' Cursor='Hand' TextDecorations='Underline' HorizontalAlignment='Center'/></StackPanel></Window>")))
+    $aWin = [System.Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader ([xml]"<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' Title='About' Height='250' Width='400' WindowStartupLocation='CenterOwner' ResizeMode='NoResize'><StackPanel Margin='20' HorizontalAlignment='Center' VerticalAlignment='Center'><TextBlock Text='Quick App Remover' FontSize='20' FontWeight='Bold' Margin='0,0,0,5' HorizontalAlignment='Center'/><TextBlock Text='The multiple searching app removal tool.' FontSize='12' FontStyle='Italic' Foreground='#6B7280' Margin='0,0,0,10' HorizontalAlignment='Center'/><TextBlock Text='v1.6.2' Margin='0,0,0,15' HorizontalAlignment='Center' Foreground='#6B7280'/><TextBlock Text='Created by Joshua Dwight' FontSize='16' Margin='0,0,0,10' HorizontalAlignment='Center'/><TextBlock Name='lnkGithub' Text='https://github.com/joshdwight101' Foreground='Blue' Cursor='Hand' TextDecorations='Underline' HorizontalAlignment='Center'/></StackPanel></Window>")))
     $aWin.FindName("lnkGithub").Add_MouseDown({ Start-Process "https://github.com/joshdwight101" })
     $aWin.Owner = $window; [void]$aWin.ShowDialog()
 }
@@ -287,7 +287,10 @@ Function Show-Changelog {
     $clContent = @"
 Quick App Remover - Historical Changelog
 
-v1.6.1 (Current)
+v1.6.2 (Current)
+- Fixed Confirm/Notice popups: Now explicitly owned by the main window to ensure they stay in the foreground and never hide.
+
+v1.6.1
 - Fixed PowerShell parser error in uninstallation status string.
 - Final code stabilization for progress tracking logic.
 
@@ -298,27 +301,16 @@ v1.6.0
 
 v1.5.1
 - Added official slogan: "The multiple searching app removal tool."
-- Integrated slogan into Header, About window, and User Guide.
 
 v1.5.0
 - Added 'User Guide' and 'About' window with clickable GitHub link.
 
-v1.4.7 - v1.4.8
-- Fixed 'IsSelected' property binder error using NoteProperty injection.
-- Fixed Changelog XML parsing errors.
-
-v1.4.1 - v1.4.6
-- Sequential uninstallation logic and Ctrl+A selection support.
+v1.4.x
+- Fixed 'IsSelected' property binder error.
 - Added global Menu Bar.
 
 v1.3.x
 - Real-time 'Filter-as-you-type' and selection persistence.
-
-v1.2.0
-- Renamed application and added 'All Apps' picker tab.
-
-v1.1.0
-- Added ToolTips and Keyboard shortcuts.
 
 v1.0.0
 - Initial Build with C# Registry discovery engine.
@@ -350,17 +342,21 @@ Function Refresh-AppList {
 
 Function Execute-Uninstall {
     param($apps)
-    if (!$apps -or $apps.Count -eq 0) { [System.Windows.MessageBox]::Show("No apps selected."); return }
-    if ([System.Windows.MessageBox]::Show("Uninstall $($apps.Count) items sequentially?", "Confirm", "YesNo", "Warning") -ne "Yes") { return }
-
+    if (!$apps -or $apps.Count -eq 0) { 
+        [void][System.Windows.MessageBox]::Show($window, "No apps selected.", "Quick App Remover", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+        return 
+    }
+    
     $total = $apps.Count
+    $confirmMsg = "Are you sure you want to uninstall ${total} items sequentially?"
+    if ([System.Windows.MessageBox]::Show($window, $confirmMsg, "Confirm Bulk Uninstall", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning) -ne "Yes") { return }
+
     $current = 0
     $pbStatus.Maximum = $total
     $pbStatus.Value = 0
 
     foreach ($app in $apps) {
         $current++
-        # Fixed parser error by wrapping the variable reference correctly
         $appName = $app.DisplayName
         $lblProgress.Text = "Processing ${current} of ${total}: ${appName}"
         Update-Log "Removing (${current}/${total}): ${appName}..."
