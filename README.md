@@ -6,7 +6,7 @@ Quick App Remover is a high-performance, PowerShell-based utility designed for s
 
 Unlike traditional scripts that rely on WMIC or Win32\_Product (which can trigger slow consistency checks and forced reboots), Quick App Remover utilizes an embedded C\# discovery engine to scan the Windows Registry directly. This results in near-instantaneous application indexing.
 
-\!\[Screenshot\](images/main-screenshot.png)
+![Screenshot](images/main-screenshot.png)
 
 ## **✨ Key Features**
 
@@ -57,11 +57,11 @@ Unlike traditional scripts that rely on WMIC or Win32\_Product (which can trigge
 * **v1.4.x:** Refined selection logic using PowerShell NoteProperties to fix binder errors.  
 * **v1.0.0:** Initial build with C\# Registry engine.
 
-\!\[screenshot\](images/filter-and-select.png)
+![screenshot](images/filter-and-select.png)
 
-\!\[screenshot\](images/removal-by-publisher.png)
+![screenshot](images/removal-by-publisher.png)
 
-\!\[screenshot\](images/vendor-wildcard-search.png)
+![screenshot](images/vendor-wildcard-search.png)
 
 ## **👤 Author**
 
